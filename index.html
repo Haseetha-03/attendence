@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduTrack</title>
+    <title>TrackEd - Seamless Attendance Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,302 +14,743 @@
             @apply bg-gray-50 text-gray-800;
         }
 
-        /* --- Landing Page Hero Section Animations --- */
-        .hero-headline, .hero-tagline, .hero-ctas {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 1s ease-out, transform 1s ease-out;
-        }
-        .hero-loaded .hero-headline {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .hero-loaded .hero-tagline {
-            opacity: 1;
-            transform: translateY(0);
-            transition-delay: 0.2s;
-        }
-        .hero-loaded .hero-ctas {
-            opacity: 1;
-            transform: translateY(0);
-            transition-delay: 0.4s;
+        /* Video background container */
+        .video-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
         }
 
-        /* --- Feature Card Staggered Animations --- */
-        .feature-card {
-            opacity: 0;
-            transform: scale(0.95);
-            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-        }
-        .card-stagger-1 { transition-delay: 0.1s; }
-        .card-stagger-2 { transition-delay: 0.2s; }
-        .card-stagger-3 { transition-delay: 0.3s; }
-        .feature-card.is-visible {
-            opacity: 1;
-            transform: scale(1);
+        #bg-video {
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            object-fit: cover;
         }
 
-        /* --- Login Form Field Animations --- */
-        .form-field {
-            opacity: 0;
-            transform: translateY(10px);
-            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(2px);
         }
-        .form-loaded .form-field:nth-child(1) { opacity: 1; transform: translateY(0); }
-        .form-loaded .form-field:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0.1s; }
-        .form-loaded .form-field:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.2s; }
 
-        /* --- Dashboard Class Card Animations --- */
-        .class-card {
-            opacity: 0;
-            transform: scale(0.95);
-            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        /* General Animations */
+        .fade-in {
+            animation: fadeIn 1s ease-in-out;
         }
-        .class-stagger-1 { transition-delay: 0.1s; }
-        .class-stagger-2 { transition-delay: 0.2s; }
-        .class-stagger-3 { transition-delay: 0.3s; }
-        .class-card.is-visible {
-            opacity: 1;
-            transform: scale(1);
+
+        .slide-up {
+            animation: slideUp 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .staggered-slide-in-left > * {
+            animation: slideInLeft 0.5s ease-out forwards;
+            opacity: 0;
+        }
+        @keyframes slideInLeft {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Pie Chart Animation */
+        .pie-chart {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: pie-chart-fill 1s ease-out forwards;
+        }
+        
+        .pie-chart-animate-absent { animation-delay: 0.5s; }
+        .pie-chart-animate-present { animation-delay: 1s; }
+
+        @keyframes pie-chart-fill {
+            from { stroke-dashoffset: 100; }
+            to { stroke-dashoffset: 0; }
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Checkmark animation */
+        .checkmark-icon {
+            animation: checkmark-fadein 0.5s ease-in-out;
+        }
+
+        @keyframes checkmark-fadein {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
         }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 antialiased">
+    <!-- Main App Container -->
+    <div id="app" class="relative min-h-screen flex flex-col">
+        <!-- Header - Shared across pages -->
+        <header class="bg-white shadow-sm sticky top-0 z-50">
+            <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+                <a href="#home" class="text-2xl font-bold text-purple-600">TrackEd</a>
+                <nav class="hidden md:flex space-x-6">
+                    <a href="#home" class="text-gray-600 hover:text-purple-600 transition-colors duration-200">Home</a>
+                    <a href="#login" class="text-gray-600 hover:text-purple-600 transition-colors duration-200" id="nav-login">Login</a>
+                    <a href="#dashboard" class="text-gray-600 hover:text-purple-600 transition-colors duration-200" id="nav-dashboard" style="display: none;">Dashboard</a>
+                    <a href="#student" class="text-gray-600 hover:text-purple-600 transition-colors duration-200" id="nav-student" style="display: none;">My Attendance</a>
+                    <a href="#teacher" class="text-gray-600 hover:text-purple-600 transition-colors duration-200" id="nav-teacher" style="display: none;">Teacher Portal</a>
+                    <a href="#contact" class="text-gray-600 hover:text-purple-600 transition-colors duration-200">Contact Us</a>
+                    <a href="#logout" class="text-gray-600 hover:text-purple-600 transition-colors duration-200" id="nav-logout" style="display: none;">Logout</a>
+                </nav>
+            </div>
+        </header>
 
-    <!-- Header - Shared across pages -->
-    <header class="bg-white shadow-sm sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-            <a href="#home" class="text-2xl font-bold text-purple-600">EduTrack</a>
-            <nav class="hidden md:flex space-x-6">
-                <a href="#home" class="text-gray-600 hover:text-purple-600 transition-colors duration-200">Home</a>
-                <a href="#login" class="text-gray-600 hover:text-purple-600 transition-colors duration-200">Login</a>
-                <a href="#dashboard" class="text-gray-600 hover:text-purple-600 transition-colors duration-200">Dashboard</a>
-            </nav>
-            <button id="mobile-menu-button" class="md:hidden p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
-                </svg>
-            </button>
-        </div>
-        <div id="mobile-menu" class="hidden md:hidden bg-white shadow-lg py-2">
-            <a href="#home" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200">Home</a>
-            <a href="#login" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200">Login</a>
-            <a href="#dashboard" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200">Dashboard</a>
-        </div>
-    </header>
+        <!-- Dynamic Content Container -->
+        <main id="content" class="flex-grow"></main>
 
-    <main id="app-container" class="transition-transform duration-700 ease-in-out">
-        <!-- Main content will be dynamically loaded here -->
-    </main>
+        <!-- Modals -->
+        <div id="modal-container" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-[100] fade-in">
+            <div id="modal-content" class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center slide-up">
+                <p id="modal-text" class="text-lg font-semibold mb-4"></p>
+                <button id="modal-close-btn" class="bg-purple-600 text-white py-2 px-4 rounded-full hover:bg-purple-700 transition-colors">Close</button>
+            </div>
+        </div>
+
+    </div>
 
     <!-- Page Templates -->
-    <template id="landing-page-template">
-        <div class="relative overflow-hidden pt-16 lg:pt-24 min-h-screen">
-            <!-- Background Animation Placeholder -->
-            <div class="absolute inset-0 bg-gradient-to-br from-purple-500 to-purple-800 opacity-20 animate-pulse"></div>
-
-            <!-- Hero Section -->
-            <section class="relative z-10 text-center container mx-auto px-4 py-16 lg:py-24">
-                <h1 class="hero-headline text-4xl lg:text-6xl font-bold leading-tight mb-4 tracking-tight text-gray-900">
-                    Smarter Attendance, Seamless Management
-                </h1>
-                <p class="hero-tagline text-lg lg:text-xl font-light mb-8 max-w-2xl mx-auto text-gray-600">
-                    EduTrack is the all-in-one solution for students, teachers, and administrators.
+    <template id="home-page-template">
+        <div class="relative w-full h-screen flex items-center justify-center text-center text-white p-4">
+            <div class="video-container">
+                <video autoplay muted loop id="bg-video">
+                    <source src="https://assets.mixkit.co/videos/preview/mixkit-flying-over-a-field-of-clouds-4190-large.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <div class="video-overlay"></div>
+            </div>
+            <div class="relative z-10 p-8 bg-black bg-opacity-30 rounded-2xl">
+                <h1 class="text-5xl md:text-6xl font-extrabold mb-4 slide-up">Welcome to TrackEd</h1>
+                <p class="text-lg md:text-xl font-light mb-8 max-w-2xl mx-auto slide-up" style="animation-delay: 0.2s;">
+                    Your all-in-one solution for seamless attendance management. For students, by students.
                 </p>
-                <div class="hero-ctas flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-                    <a href="#login" class="bg-purple-600 text-white font-semibold py-3 px-8 rounded-full shadow-lg hover:bg-purple-700 transition-all duration-200 transform hover:scale-105">
-                        Get Started
+                <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-4 slide-up" style="animation-delay: 0.4s;">
+                    <a href="#login" class="w-full md:w-auto bg-purple-600 text-white py-3 px-8 rounded-full shadow-lg hover:bg-purple-700 transition-all duration-300 transform hover:scale-105">
+                        Login
                     </a>
-                    <a href="#" class="bg-transparent border-2 border-purple-600 text-purple-600 font-semibold py-3 px-8 rounded-full hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105">
-                        Learn More
+                    <a href="#signup" class="w-full md:w-auto bg-transparent border-2 border-white text-white py-3 px-8 rounded-full hover:bg-white hover:text-purple-600 transition-all duration-300 transform hover:scale-105">
+                        Sign Up
                     </a>
                 </div>
-            </section>
-
-            <!-- Features Section -->
-            <section id="features" class="container mx-auto px-4 py-16 lg:py-24">
-                <h2 class="text-3xl lg:text-4xl font-bold text-center mb-12">Features Designed for You</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <!-- Feature Card 1 -->
-                    <div class="feature-card is-visible bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 card-stagger-1">
-                        <div class="flex justify-center items-center w-16 h-16 bg-purple-100 rounded-full mb-6">
-                            <svg class="w-8 h-8 text-purple-600" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM6 9a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1z"></path></svg>
-                        </div>
-                        <h3 class="text-xl font-semibold mb-3">Easy Attendance</h3>
-                        <p class="text-gray-600">
-                            Teachers can take attendance in seconds with our intuitive interface.
-                        </p>
-                    </div>
-                    <!-- Feature Card 2 -->
-                    <div class="feature-card is-visible bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 card-stagger-2">
-                        <div class="flex justify-center items-center w-16 h-16 bg-purple-100 rounded-full mb-6">
-                            <svg class="w-8 h-8 text-purple-600" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM9 13a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1h2a1 1 0 011 1v2zm4-2a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1h2a1 1 0 001-1v-2z"></path></svg>
-                        </div>
-                        <h3 class="text-xl font-semibold mb-3">Real-Time Insights</h3>
-                        <p class="text-gray-600">
-                            Access live attendance statistics and reports for all your classes.
-                        </p>
-                    </div>
-                    <!-- Feature Card 3 -->
-                    <div class="feature-card is-visible bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 card-stagger-3">
-                        <div class="flex justify-center items-center w-16 h-16 bg-purple-100 rounded-full mb-6">
-                            <svg class="w-8 h-8 text-purple-600" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM9 13a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1h2a1 1 0 011 1v2zm4-2a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1h2a1 1 0 001-1v-2z"></path></svg>
-                        </div>
-                        <h3 class="text-xl font-semibold mb-3">Student Portal</h3>
-                        <p class="text-gray-600">
-                            Students can easily view their attendance records and get notifications.
-                        </p>
-                    </div>
-                </div>
-            </section>
+            </div>
         </div>
     </template>
 
     <template id="login-page-template">
-        <div class="flex items-center justify-center min-h-screen">
-            <div class="w-full max-w-md p-8 sm:p-10 bg-white rounded-3xl shadow-xl">
-                <div class="text-center mb-8">
-                    <h2 class="text-3xl font-bold text-gray-900">Login to EduTrack</h2>
-                    <p class="text-gray-500 mt-2">Choose your role to get started</p>
-                </div>
-                
-                <form id="login-form" class="space-y-6 form-loaded">
-                    <div class="form-field">
-                        <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
-                        <input type="email" id="email" name="email" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 transition-all duration-200" placeholder="your.email@example.com">
-                    </div>
-                    
-                    <div class="form-field">
-                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                        <input type="password" id="password" name="password" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 transition-all duration-200" placeholder="••••••••">
-                    </div>
+        <div class="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+            <div class="w-full max-w-sm bg-white p-8 rounded-2xl shadow-xl">
+                <h2 class="text-3xl font-bold text-center text-gray-900 mb-6 slide-up">Login to TrackEd</h2>
+                <form id="login-form" class="space-y-4 slide-up" style="animation-delay: 0.2s;">
+                    <input type="email" id="login-email" placeholder="Email" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+                    <input type="password" id="login-password" placeholder="Password" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+                    <button type="submit" id="login-button" class="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-full hover:bg-purple-700 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">Login</button>
+                </form>
+                <p id="login-error" class="text-center text-red-500 text-sm mt-4 hidden fade-in" style="animation-delay: 0.4s;">Invalid credentials.</p>
+                <p class="text-center text-gray-500 mt-4 slide-up" style="animation-delay: 0.6s;">Don't have an account? <a href="#signup" class="text-purple-600 hover:underline">Sign Up</a></p>
+            </div>
+        </div>
+    </template>
 
-                    <div class="form-field">
-                        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200 transform hover:scale-105">
-                            Sign In
-                        </button>
-                    </div>
+    <template id="signup-page-template">
+        <div class="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+            <div class="w-full max-w-sm bg-white p-8 rounded-2xl shadow-xl">
+                <h2 class="text-3xl font-bold text-center text-gray-900 mb-6 slide-up">Create an Account</h2>
+                <form id="signup-form" class="space-y-4 slide-up" style="animation-delay: 0.2s;">
+                    <input type="text" id="signup-name" placeholder="Full Name" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+                    <input type="email" id="signup-email" placeholder="Email" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+                    <input type="password" id="signup-password" placeholder="Password" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+                    <select id="signup-role" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+                        <option value="student">Student</option>
+                        <option value="teacher">Teacher</option>
+                    </select>
+                    <button type="submit" class="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-full hover:bg-purple-700 transition-all duration-300 transform hover:scale-105">Sign Up</button>
                 </form>
             </div>
         </div>
     </template>
 
-    <template id="dashboard-page-template">
-        <div class="p-4 sm:p-8 min-h-screen">
-            <h1 class="text-3xl font-bold text-gray-900 mb-6">Teacher Dashboard</h1>
-            
-            <!-- Quick Stats Section -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="bg-white p-6 rounded-2xl shadow-lg transform transition-all duration-300 hover:scale-105">
-                    <h3 class="text-lg font-medium text-gray-500">Total Students</h3>
-                    <p id="total-students" class="text-4xl font-bold text-gray-900 mt-2">150</p>
+    <template id="student-page-template">
+        <div class="p-4 sm:p-8 min-h-screen bg-gray-100">
+            <div class="w-full max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-xl fade-in">
+                <h2 id="student-name-title" class="text-3xl font-bold text-gray-900 mb-6 slide-up">Student Dashboard</h2>
+                
+                <!-- Student Profile Section -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 slide-up" style="animation-delay: 0.2s;">
+                    <div class="bg-gray-100 p-6 rounded-xl shadow-inner">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Personal Information</h3>
+                        <div class="space-y-3 text-gray-600">
+                            <p><strong>Name:</strong> <span id="student-profile-name"></span></p>
+                            <p><strong>Age:</strong> <span id="student-profile-age"></span></p>
+                            <p><strong>Date of Birth:</strong> <span id="student-profile-dob"></span></p>
+                        </div>
+                    </div>
+                    <div class="bg-gray-100 p-6 rounded-xl shadow-inner">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Academic Details</h3>
+                        <div class="space-y-3 text-gray-600">
+                            <p><strong>Current Year:</strong> <span id="student-profile-current-year"></span></p>
+                            <p><strong>Joining Year:</strong> <span id="student-profile-joining-year"></span></p>
+                            <p><strong>Graduating Year:</strong> <span id="student-profile-graduating-year"></span></p>
+                        </div>
+                    </div>
                 </div>
-                <div class="bg-white p-6 rounded-2xl shadow-lg transform transition-all duration-300 hover:scale-105">
-                    <h3 class="text-lg font-medium text-gray-500">Active Classes</h3>
-                    <p id="active-classes" class="text-4xl font-bold text-gray-900 mt-2">6</p>
+
+                <!-- Overall Attendance Section -->
+                <div class="bg-purple-50 p-6 rounded-2xl flex items-center justify-between mb-8 slide-up" style="animation-delay: 0.4s;">
+                    <div>
+                        <p class="text-purple-800 text-lg">Overall Attendance Percentage</p>
+                        <p id="student-overall-percentage" class="text-4xl font-extrabold text-purple-600 mt-2">0%</p>
+                    </div>
+                    <div class="relative w-24 h-24">
+                        <svg class="absolute top-0 left-0" viewBox="0 0 36 36">
+                            <path class="text-gray-200 stroke-current" d="M18 2.0845a15.9155 15.9155 0 010 31.831" fill="none" stroke-width="2" stroke-dasharray="100" stroke-dashoffset="0"></path>
+                            <path id="circle-progress" class="text-purple-600 stroke-current pie-chart" d="M18 2.0845a15.9155 15.9155 0 010 31.831" fill="none" stroke-width="2"></path>
+                        </svg>
+                        <span id="circle-text" class="absolute inset-0 flex items-center justify-center font-bold text-purple-600">0%</span>
+                    </div>
                 </div>
-                <div class="bg-white p-6 rounded-2xl shadow-lg transform transition-all duration-300 hover:scale-105">
-                    <h3 class="text-lg font-medium text-gray-500">Today's Attendance</h3>
-                    <p id="today-attendance" class="text-4xl font-bold text-gray-900 mt-2">95%</p>
+
+                <!-- Monthly Attendance Chart -->
+                <div class="bg-gray-100 p-6 rounded-2xl slide-up" style="animation-delay: 0.6s;">
+                    <h3 class="text-2xl font-bold mb-4">Monthly Attendance</h3>
+                    <div id="monthly-chart" class="h-48 flex items-end space-x-2">
+                        <!-- Bars will be generated here -->
+                    </div>
+                </div>
+
+                <div class="mt-8 text-center slide-up" style="animation-delay: 0.8s;">
+                    <p class="text-gray-500">Your details are displayed based on your login.</p>
                 </div>
             </div>
+        </div>
+    </template>
 
-            <!-- Class Cards Section -->
-            <h2 class="text-2xl font-bold text-gray-900 mb-4">My Classes</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="class-cards-container">
-                <!-- Class Card 1 -->
-                <div class="class-card bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 class-stagger-1">
-                    <h3 class="text-xl font-semibold text-gray-900">Introduction to Computer Science</h3>
-                    <p class="text-gray-500">Fall 2024</p>
-                    <div class="mt-4 flex items-center justify-between">
-                        <span class="text-sm text-gray-600">Total Students: 30</span>
-                        <a href="#" class="text-purple-600 font-medium hover:underline">View Details</a>
+    <template id="teacher-page-template">
+        <div class="p-4 sm:p-8 min-h-screen bg-gray-100">
+            <div class="w-full max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-xl fade-in">
+                <h2 class="text-3xl font-bold text-gray-900 mb-6 slide-up">Teacher Portal</h2>
+
+                <!-- Add/Remove Student Section -->
+                <div class="mb-8 slide-up" style="animation-delay: 0.2s;">
+                    <h3 class="text-2xl font-bold mb-4">Manage Students</h3>
+                    <form id="add-student-form" class="space-y-4">
+                        <input type="text" id="new-student-name" placeholder="Student Name" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+                        <input type="email" id="new-student-email" placeholder="Email" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+                        <button type="submit" class="bg-green-500 text-white font-bold py-3 px-6 rounded-full hover:bg-green-600 transition">Add Student</button>
+                    </form>
+                </div>
+
+                <!-- Mark Attendance Section -->
+                <div class="slide-up" style="animation-delay: 0.4s;">
+                    <h3 class="text-2xl font-bold mb-4">Mark Today's Attendance</h3>
+                    <table class="min-w-full divide-y divide-gray-200 rounded-lg overflow-hidden shadow-lg">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-attendance-list" class="bg-white divide-y divide-gray-200">
+                            <!-- Student rows generated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="dashboard-page-template">
+        <div class="p-4 sm:p-8 min-h-screen bg-gray-100">
+            <div class="w-full max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-xl fade-in">
+                <h2 class="text-3xl font-bold text-gray-900 mb-8 slide-up">Dashboard</h2>
+                
+                <!-- Daily Attendance Pie Chart -->
+                <div class="mb-8 slide-up" style="animation-delay: 0.2s;">
+                    <h3 class="text-2xl font-bold mb-4">Today's Attendance</h3>
+                    <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-8">
+                        <div class="relative w-48 h-48">
+                            <svg class="w-full h-full" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="none" stroke="#ef4444" stroke-width="10" stroke-dasharray="100" stroke-dashoffset="0" class="pie-chart-animate-absent"></circle>
+                                <circle cx="50" cy="50" r="45" fill="none" stroke="#22c55e" stroke-width="10" stroke-dasharray="100" stroke-dashoffset="0" transform="rotate(-90 50 50)" class="pie-chart-animate-present"></circle>
+                            </svg>
+                        </div>
+                        <ul class="text-lg font-medium space-y-2">
+                            <li><span class="inline-block w-4 h-4 rounded-full bg-green-500 mr-2"></span> Present: <span id="present-count">0</span></li>
+                            <li><span class="inline-block w-4 h-4 rounded-full bg-red-500 mr-2"></span> Absent: <span id="absent-count">0</span></li>
+                        </ul>
                     </div>
                 </div>
-                <!-- Class Card 2 -->
-                <div class="class-card bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 class-stagger-2">
-                    <h3 class="text-xl font-semibold text-gray-900">Data Structures & Algorithms</h3>
-                    <p class="text-gray-500">Fall 2024</p>
-                    <div class="mt-4 flex items-center justify-between">
-                        <span class="text-sm text-gray-600">Total Students: 25</span>
-                        <a href="#" class="text-purple-600 font-medium hover:underline">View Details</a>
-                    </div>
-                </div>
-                <!-- Class Card 3 -->
-                <div class="class-card bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 class-stagger-3">
-                    <h3 class="text-xl font-semibold text-gray-900">Web Development Fundamentals</h3>
-                    <p class="text-gray-500">Fall 2024</p>
-                    <div class="mt-4 flex items-center justify-between">
-                        <span class="text-sm text-gray-600">Total Students: 35</span>
-                        <a href="#" class="text-purple-600 font-medium hover:underline">View Details</a>
+
+                <!-- Monthly Absentee Pie Chart -->
+                <div class="mb-8 slide-up" style="animation-delay: 0.4s;">
+                    <h3 class="text-2xl font-bold mb-4">Highest Monthly Absentees</h3>
+                    <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-8">
+                        <div class="relative w-48 h-48">
+                            <svg class="w-full h-full" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="none" stroke="#2563eb" stroke-width="10" stroke-dasharray="100" stroke-dashoffset="0" class="pie-chart-animate-present"></circle>
+                                <circle cx="50" cy="50" r="45" fill="none" stroke="#ef4444" stroke-width="10" stroke-dasharray="100" stroke-dashoffset="0" transform="rotate(-90 50 50)" class="pie-chart-animate-absent"></circle>
+                            </svg>
+                        </div>
+                        <ul class="text-lg font-medium space-y-2">
+                            <li><span class="inline-block w-4 h-4 rounded-full bg-blue-600 mr-2"></span> Alex Johnson: <span id="highest-absentee-1">0</span> absences</li>
+                            <li><span class="inline-block w-4 h-4 rounded-full bg-yellow-500 mr-2"></span> Ben Carter: <span id="highest-absentee-2">0</span> absences</li>
+                            <li><span class="inline-block w-4 h-4 rounded-full bg-purple-500 mr-2"></span> Sarah Lee: <span id="highest-absentee-3">0</span> absences</li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </div>
     </template>
-    
+
+    <template id="contact-page-template">
+        <div class="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+            <div class="w-full max-w-lg bg-white p-8 rounded-2xl shadow-xl fade-in">
+                <h2 class="text-3xl font-bold text-center text-gray-900 mb-6 slide-up">Contact Us</h2>
+                <form id="contact-form" class="space-y-4 slide-up" style="animation-delay: 0.2s;">
+                    <input type="text" id="contact-name" placeholder="Name" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+                    <input type="email" id="contact-email" placeholder="Email" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+                    <input type="tel" id="contact-phone" placeholder="Phone Number" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+                    <textarea id="contact-enquiry" placeholder="Your enquiry" rows="4" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"></textarea>
+                    <button type="submit" class="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-full hover:bg-purple-700 transition-all duration-300 transform hover:scale-105">Submit</button>
+                </form>
+            </div>
+        </div>
+    </template>
+
     <script>
-        const appContainer = document.getElementById('app-container');
-        const mobileMenuButton = document.getElementById('mobile-menu-button');
-        const mobileMenu = document.getElementById('mobile-menu');
+        const app = document.getElementById('app');
+        const content = document.getElementById('content');
+        const navLogin = document.getElementById('nav-login');
+        const navDashboard = document.getElementById('nav-dashboard');
+        const navStudent = document.getElementById('nav-student');
+        const navTeacher = document.getElementById('nav-teacher');
+        const navLogout = document.getElementById('nav-logout');
+        const modalContainer = document.getElementById('modal-container');
+        const modalText = document.getElementById('modal-text');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
 
-        // Handles page navigation and animations
-        function navigate(pageId) {
-            const template = document.getElementById(`${pageId}-page-template`);
-            if (!template) return;
+        // App state
+        let appState = {
+            isLoggedIn: false,
+            userType: null, // 'student' or 'teacher'
+            currentUser: null
+        };
 
-            // Remove existing content with an exit animation
-            if (appContainer.firstChild) {
-                appContainer.style.transform = 'translateX(-100%)';
-                setTimeout(() => {
-                    appContainer.innerHTML = '';
-                    loadContent(template);
-                }, 700);
+        // Mock database
+        const mockDb = {
+            users: [
+                { id: 1, email: 'student@example.com', password: 'password', role: 'student', name: 'Student Test' },
+                { id: 2, email: 'teacher@example.com', password: 'password', role: 'teacher', name: 'Professor A. Smith' },
+            ],
+            students: [
+                { id: 1, name: 'Student Test', email: 'student@example.com', age: 20, dob: '01/15/2005', currentYear: 3, joiningYear: 2023, graduatingYear: 2026, attendance: [80, 75, 90, 85, 92, 78, 88, 95, 83, 70, 65, 99], attendanceThisMonth: 85, totalAbsences: 5 },
+                { id: 3, name: 'Alex Johnson', email: 'alex@example.com', age: 21, dob: '05/20/2004', currentYear: 4, joiningYear: 2022, graduatingYear: 2026, attendanceThisMonth: 90, totalAbsences: 7, isPresentToday: true },
+                { id: 4, name: 'Ben Carter', email: 'ben@example.com', age: 19, dob: '08/10/2006', currentYear: 2, joiningYear: 2024, graduatingYear: 2028, attendanceThisMonth: 88, totalAbsences: 9, isPresentToday: false },
+                { id: 5, name: 'Sarah Lee', email: 'sarah@example.com', age: 20, dob: '03/25/2005', currentYear: 3, joiningYear: 2023, graduatingYear: 2027, attendanceThisMonth: 95, totalAbsences: 6, isPresentToday: true }
+            ],
+            dailyAttendance: {
+                present: 25,
+                absent: 5
+            }
+        };
+
+        // UI Functions
+        function showModal(message, duration = 2000) {
+            modalText.textContent = message;
+            modalContainer.style.display = 'flex';
+            setTimeout(() => {
+                modalContainer.style.display = 'none';
+            }, duration);
+        }
+
+        modalCloseBtn.addEventListener('click', () => {
+            modalContainer.style.display = 'none';
+        });
+
+        // Navigation and Rendering
+        function updateNavigation() {
+            // Hide all nav links by default
+            navLogin.style.display = 'none';
+            navDashboard.style.display = 'none';
+            navStudent.style.display = 'none';
+            navTeacher.style.display = 'none';
+            navLogout.style.display = 'none';
+
+            // Show appropriate links based on login state
+            if (appState.isLoggedIn) {
+                navLogout.style.display = 'block';
+                if (appState.userType === 'student') {
+                    navStudent.style.display = 'block';
+                } else if (appState.userType === 'teacher') {
+                    navDashboard.style.display = 'block';
+                    navTeacher.style.display = 'block';
+                }
             } else {
-                loadContent(template);
+                navLogin.style.display = 'block';
             }
         }
 
-        // Loads new page content with an entrance animation
-        function loadContent(template) {
-            const pageContent = template.content.cloneNode(true);
-            appContainer.appendChild(pageContent);
-            appContainer.style.transform = 'translateX(0)';
+        function renderPage(pageId) {
+            let template = document.getElementById(`${pageId}-page-template`);
+            if (!template) {
+                console.error('Template not found:', pageId);
+                return;
+            }
 
-            // Trigger specific page animations
-            if (template.id === 'landing-page-template') {
-                document.body.classList.add('hero-loaded');
-            } else if (template.id === 'login-page-template') {
-                document.getElementById('login-form').classList.add('form-loaded');
-            } else if (template.id === 'dashboard-page-template') {
-                const cards = document.querySelectorAll('.class-card');
-                cards.forEach((card, index) => {
-                    setTimeout(() => {
-                        card.classList.add('is-visible');
-                    }, 200 * (index + 1));
+            content.innerHTML = '';
+            content.appendChild(template.content.cloneNode(true));
+            window.scrollTo(0, 0);
+
+            // Run page-specific logic
+            switch (pageId) {
+                case 'login':
+                    setupLoginPage();
+                    break;
+                case 'signup':
+                    setupSignupPage();
+                    break;
+                case 'student':
+                    setupStudentPage();
+                    break;
+                case 'teacher':
+                    setupTeacherPage();
+                    break;
+                case 'dashboard':
+                    setupDashboardPage();
+                    break;
+            }
+        }
+
+        // Page-specific setup functions
+        function setupLoginPage() {
+            const form = document.getElementById('login-form');
+            const emailInput = document.getElementById('login-email');
+            const passwordInput = document.getElementById('login-password');
+            const errorElement = document.getElementById('login-error');
+            const loginButton = document.getElementById('login-button');
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const originalButtonText = loginButton.innerHTML;
+                loginButton.innerHTML = '<div class="loading-spinner"></div>';
+
+                setTimeout(() => {
+                    const user = mockDb.users.find(u => u.email === emailInput.value && u.password === passwordInput.value);
+                    if (user) {
+                        appState.isLoggedIn = true;
+                        appState.userType = user.role;
+                        appState.currentUser = user;
+                        updateNavigation();
+                        loginButton.innerHTML = `
+                            <svg class="w-6 h-6 text-white checkmark-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        `;
+                        showModal('Login Successful!', 1000);
+                        setTimeout(() => {
+                            navigate(user.role === 'student' ? 'student' : 'dashboard');
+                            loginButton.innerHTML = originalButtonText;
+                        }, 1500);
+                    } else {
+                        loginButton.innerHTML = originalButtonText;
+                        showModal('Invalid email or password. Please try again.');
+                    }
+                }, 1500);
+            });
+        }
+
+        function setupSignupPage() {
+            const form = document.getElementById('signup-form');
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = document.getElementById('signup-name').value;
+                const email = document.getElementById('signup-email').value;
+                const password = document.getElementById('signup-password').value;
+                const role = document.getElementById('signup-role').value;
+                
+                const newUser = { id: Date.now(), name, email, password, role };
+                mockDb.users.push(newUser);
+                
+                // Also add a mock student profile if the user is a student
+                if (role === 'student') {
+                    const currentYear = new Date().getFullYear();
+                    mockDb.students.push({
+                        id: newUser.id,
+                        name: newUser.name,
+                        email: newUser.email,
+                        age: 18 + Math.floor(Math.random() * 5),
+                        dob: `0${Math.floor(Math.random() * 9) + 1}/15/2005`,
+                        currentYear: 1 + Math.floor(Math.random() * 4),
+                        joiningYear: currentYear - (1 + Math.floor(Math.random() * 3)),
+                        graduatingYear: currentYear + (3 + Math.floor(Math.random() * 2)),
+                        attendance: [Math.floor(Math.random() * 40) + 60, Math.floor(Math.random() * 40) + 60, Math.floor(Math.random() * 40) + 60, Math.floor(Math.random() * 40) + 60, Math.floor(Math.random() * 40) + 60, Math.floor(Math.random() * 40) + 60, Math.floor(Math.random() * 40) + 60, Math.floor(Math.random() * 40) + 60, Math.floor(Math.random() * 40) + 60, Math.floor(Math.random() * 40) + 60, Math.floor(Math.random() * 40) + 60, Math.floor(Math.random() * 40) + 60],
+                        attendanceThisMonth: Math.floor(Math.random() * 40) + 60,
+                        totalAbsences: Math.floor(Math.random() * 10),
+                    });
+                }
+
+                showModal('Account created successfully! You can now log in.');
+                renderPage('login');
+            });
+        }
+
+        function setupStudentPage() {
+            const student = appState.currentUser;
+            if (!student) {
+                showModal('Please log in to view this page.');
+                navigate('login');
+                return;
+            }
+
+            const studentData = mockDb.students.find(s => s.id === student.id);
+            if (!studentData) {
+                showModal('Student data not found.');
+                return;
+            }
+
+            // Update details
+            document.getElementById('student-name-title').textContent = `${studentData.name}'s Dashboard`;
+            
+            // Populate profile details
+            document.getElementById('student-profile-name').textContent = studentData.name;
+            document.getElementById('student-profile-age').textContent = studentData.age;
+            document.getElementById('student-profile-dob').textContent = studentData.dob;
+            document.getElementById('student-profile-current-year').textContent = studentData.currentYear;
+            document.getElementById('student-profile-joining-year').textContent = studentData.joiningYear;
+            document.getElementById('student-profile-graduating-year').textContent = studentData.graduatingYear;
+
+            const overallPercentage = Math.round(studentData.attendanceThisMonth);
+            document.getElementById('student-overall-percentage').textContent = `${overallPercentage}%`;
+            document.getElementById('circle-text').textContent = `${overallPercentage}%`;
+            
+            // Animate circular progress
+            const circleProgress = document.getElementById('circle-progress');
+            const circumference = 2 * Math.PI * 15.9155;
+            const progress = overallPercentage / 100 * circumference;
+            circleProgress.style.transition = 'stroke-dashoffset 1s ease-out';
+            circleProgress.style.strokeDashoffset = circumference - progress;
+            circleProgress.style.strokeDasharray = circumference;
+
+            // Monthly attendance chart
+            const monthlyChart = document.getElementById('monthly-chart');
+            monthlyChart.innerHTML = '';
+            const maxAttendance = Math.max(...studentData.attendance);
+            studentData.attendance.forEach((att, index) => {
+                const barHeight = (att / 100) * 100;
+                const bar = document.createElement('div');
+                bar.className = `flex-1 bg-purple-600 rounded-lg transition-all duration-700 ease-out transform scale-y-0 origin-bottom`;
+                bar.style.height = `${barHeight}%`;
+                bar.style.transitionDelay = `${index * 50}ms`;
+                bar.style.animation = 'bar-grow 1s ease-in-out forwards';
+                bar.innerHTML = `<span class="hidden md:block absolute bottom-full left-1/2 -translate-x-1/2 text-xs text-gray-500">${att}%</span>`;
+                monthlyChart.appendChild(bar);
+                setTimeout(() => {
+                    bar.style.transform = 'scaleY(1)';
+                }, 10);
+            });
+        }
+
+        function setupTeacherPage() {
+            if (appState.userType !== 'teacher') {
+                showModal('Access denied. This page is for teachers only.');
+                navigate('login');
+                return;
+            }
+
+            // Student management forms
+            const addForm = document.getElementById('add-student-form');
+            addForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = document.getElementById('new-student-name').value;
+                const email = document.getElementById('new-student-email').value;
+                if (name && email) {
+                    const currentYear = new Date().getFullYear();
+                    mockDb.students.push({
+                         id: Date.now(), 
+                         name, 
+                         email,
+                         age: 18 + Math.floor(Math.random() * 5),
+                         dob: `0${Math.floor(Math.random() * 9) + 1}/15/2005`,
+                         currentYear: 1 + Math.floor(Math.random() * 4),
+                         joiningYear: currentYear - (1 + Math.floor(Math.random() * 3)),
+                         graduatingYear: currentYear + (3 + Math.floor(Math.random() * 2)),
+                         attendanceThisMonth: 0, 
+                         totalAbsences: 0 
+                     });
+                    showModal(`${name} has been added.`);
+                    updateStudentList();
+                    addForm.reset();
+                }
+            });
+
+            const studentListEl = document.getElementById('student-attendance-list');
+            function updateStudentList() {
+                studentListEl.innerHTML = '';
+                mockDb.students.forEach(student => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50 transition-colors duration-200 stagger-slide-in-left';
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">${student.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" data-student-id="${student.id}" class="sr-only peer present-toggle" ${student.isPresentToday ? 'checked' : ''}>
+                                <div class="w-11 h-6 bg-red-500 peer-focus:outline-none rounded-full peer-checked:bg-green-500 transition-colors duration-300"></div>
+                            </label>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <button class="text-red-600 hover:text-red-800 transition delete-btn" data-student-id="${student.id}">
+                                Remove
+                            </button>
+                        </td>
+                    `;
+                    studentListEl.appendChild(row);
+                });
+
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.dataset.studentId;
+                        const index = mockDb.students.findIndex(s => s.id == id);
+                        if (index !== -1) {
+                            const removedStudent = mockDb.students.splice(index, 1)[0];
+                            showModal(`${removedStudent.name} has been removed.`);
+                            updateStudentList();
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.present-toggle').forEach(toggle => {
+                    toggle.addEventListener('change', (e) => {
+                        const id = e.target.dataset.studentId;
+                        const student = mockDb.students.find(s => s.id == id);
+                        if (student) {
+                            student.isPresentToday = e.target.checked;
+                            if (!student.isPresentToday) {
+                                student.totalAbsences = (student.totalAbsences || 0) + 1;
+                                showModal(`Notification sent to parent of ${student.name} about their absence.`);
+                            }
+                        }
+                    });
                 });
             }
+            updateStudentList();
         }
 
-        // Event listeners for navigation links
-        document.querySelectorAll('a[href^="#"]').forEach(link => {
-            link.addEventListener('click', (e) => {
+        function setupDashboardPage() {
+            if (appState.userType !== 'teacher') {
+                showModal('Access denied. This page is for teachers only.');
+                navigate('login');
+                return;
+            }
+
+            const presentCount = document.getElementById('present-count');
+            const absentCount = document.getElementById('absent-count');
+            const dailyData = mockDb.dailyAttendance;
+            presentCount.textContent = dailyData.present;
+            absentCount.textContent = dailyData.absent;
+
+            // Animate pie charts (this is a simplified example)
+            const presentPie = document.querySelector('.pie-chart-animate-present');
+            const absentPie = document.querySelector('.pie-chart-animate-absent');
+            const total = dailyData.present + dailyData.absent;
+            const presentPercentage = (dailyData.present / total) * 100;
+            const absentPercentage = (dailyData.absent / total) * 100;
+
+            const circumference = 2 * Math.PI * 45;
+
+            presentPie.style.strokeDasharray = `${presentPercentage} ${100 - presentPercentage}`;
+            absentPie.style.strokeDasharray = `${absentPercentage} ${100 - absentPercentage}`;
+
+            // Reset animation
+            presentPie.style.strokeDashoffset = '100';
+            absentPie.style.strokeDashoffset = '100';
+            setTimeout(() => {
+                presentPie.style.strokeDashoffset = '0';
+                absentPie.style.strokeDashoffset = '0';
+            }, 100);
+            
+            // Monthly absentees
+            const highestAbsentees = mockDb.students
+                .sort((a, b) => b.totalAbsences - a.totalAbsences)
+                .slice(0, 3);
+            
+            document.getElementById('highest-absentee-1').textContent = highestAbsentees[0]?.totalAbsences || 0;
+            document.getElementById('highest-absentee-2').textContent = highestAbsentees[1]?.totalAbsences || 0;
+            document.getElementById('highest-absentee-3').textContent = highestAbsentees[2]?.totalAbsences || 0;
+
+        }
+
+        function navigate(pageId) {
+            if (pageId === 'logout') {
+                appState.isLoggedIn = false;
+                appState.userType = null;
+                appState.currentUser = null;
+                updateNavigation();
+                renderPage('home');
+                return;
+            }
+            
+            // Simple access control
+            if (['dashboard', 'student', 'teacher'].includes(pageId) && !appState.isLoggedIn) {
+                showModal('You must be logged in to view this page.');
+                renderPage('login');
+                return;
+            }
+            renderPage(pageId);
+        }
+
+        // Handle navigation clicks
+        document.body.addEventListener('click', (e) => {
+            const target = e.target;
+            if (target.tagName === 'A' && target.getAttribute('href').startsWith('#')) {
                 e.preventDefault();
-                const pageId = e.target.getAttribute('href').substring(1);
+                const pageId = target.getAttribute('href').substring(1);
                 navigate(pageId);
-                // Close mobile menu
-                mobileMenu.classList.add('hidden');
-            });
+            }
         });
 
         // Initial page load
         document.addEventListener('DOMContentLoaded', () => {
-            navigate('landing');
-        });
-
-        // Mobile menu toggle
-        mobileMenuButton.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
+            navigate('home');
+            updateNavigation();
         });
     </script>
 </body>
